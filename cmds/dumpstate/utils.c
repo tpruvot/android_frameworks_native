@@ -414,6 +414,7 @@ const char *dump_traces() {
         close(fd);
         return NULL;
     }
+    close(fd);
 
     /* walk /proc and kill -QUIT all Dalvik processes */
     DIR *proc = opendir("/proc");
