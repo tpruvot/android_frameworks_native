@@ -553,26 +553,6 @@ int SurfaceTextureClient::setCrop(Rect const* rect)
 
     Mutex::Autolock lock(mMutex);
     mCrop = realRect;
-    mCropNeedsTransform = false;
-    return NO_ERROR;
-}
-
-int SurfaceTextureClient::setPostTransformCrop(Rect const* rect)
-{
-    ATRACE_CALL();
-
-    Rect realRect;
-    if (rect == NULL || rect->isEmpty()) {
-        realRect.clear();
-    } else {
-        realRect = *rect;
-    }
-
-    ALOGV("SurfaceTextureClient::setPostTransformCrop rect=[%d %d %d %d]",
-            realRect.left, realRect.top, realRect.right, realRect.bottom);
-
-    Mutex::Autolock lock(mMutex);
-    mCrop = realRect;
     return NO_ERROR;
 }
 
