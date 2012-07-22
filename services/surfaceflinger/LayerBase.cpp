@@ -29,6 +29,9 @@
 #include <private/pixelflinger/ggl_fixed.h>
 
 #include <hardware/hardware.h>
+#ifdef QCOMHW
+#include <gralloc_priv.h>
+#endif
 
 #include "clz.h"
 #include "LayerBase.h"
@@ -47,6 +50,9 @@
 #define RENDER_EFFECT_RED 10
 
 namespace android {
+
+//Helper
+bool isLayerExternalOnly(const sp<Layer>& layer);
 
 // ---------------------------------------------------------------------------
 
@@ -79,13 +85,13 @@ String8 LayerBase::getName() const {
 }
 
 const GraphicPlane& LayerBase::graphicPlane(int dpy) const
-{ 
+{
     return mFlinger->graphicPlane(dpy);
 }
 
 GraphicPlane& LayerBase::graphicPlane(int dpy)
 {
-    return mFlinger->graphicPlane(dpy); 
+    return mFlinger->graphicPlane(dpy);
 }
 
 void LayerBase::initStates(uint32_t w, uint32_t h, uint32_t flags)
@@ -197,7 +203,7 @@ bool LayerBase::setCrop(const Rect& crop) {
 Rect LayerBase::visibleBounds() const
 {
     return mTransformedBounds;
-}      
+}
 
 void LayerBase::setVisibleRegion(const Region& visibleRegion) {
     // always called from main thread
@@ -350,11 +356,19 @@ bool LayerBase::getFiltering() const
 
 void LayerBase::draw(const Region& clip) const
 {
+    //Dont draw External-only layers
+    if (isLayerExternalOnly(getLayer())) {
+        return;
+    }
     onDraw(clip);
 }
 
 void LayerBase::drawForSreenShot()
 {
+    //Dont draw External-only layers
+    if (isLayerExternalOnly(getLayer())) {
+        return;
+    }
     const DisplayHardware& hw(graphicPlane(0).displayHardware());
     setFiltering(true);
     onDraw( Region(hw.bounds()) );
@@ -626,5 +640,20 @@ LayerBaseClient::LayerCleaner::~LayerCleaner() {
 }
 
 // ---------------------------------------------------------------------------
+
+//Helper for external-only layers
+bool isLayerExternalOnly(const sp<Layer>& layer) {
+#ifdef QCOMHW
+    if(layer != NULL) {
+        const sp<GraphicBuffer>& buffer(layer->getActiveBuffer());
+        if (buffer != NULL) {
+            const int usage = buffer->getUsage();
+            if(usage & GRALLOC_USAGE_PRIVATE_EXTERNAL_ONLY)
+                return true;
+        }
+    }
+#endif
+    return false;
+}
 
 }; // namespace android
